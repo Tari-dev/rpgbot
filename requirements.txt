@@ -1,0 +1,6 @@
+aiohttp
+discord.py
+dnspython
+jishaku
+motor
+python-dotenv
