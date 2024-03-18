@@ -27,18 +27,20 @@ os.environ["JISHAKU_RETAIN"] = "True"
 logger = ext.log.create_logger(level=logging.INFO)
 
 TEST_GUILD = discord.Object(id=1214922874825998346)
+COGS = [
+    "cogs.basic",
+    "jishaku"
+]
 
 
-intents = discord.Intents.default()
-intents.message_content = True
 
 
 class RPGBot(commands.Bot):
     def __init__(self):
         super().__init__(
-            command_prefix="?",
+            command_prefix=commands.when_mentioned,
             case_insensitive=True,
-            intents=intents,
+            intents=discord.Intents.default(),
             activity=discord.Activity(name="new users using /help", type=discord.ActivityType.watching),
             owner_id=615785223296253953,
         )
@@ -135,8 +137,8 @@ class RPGBot(commands.Bot):
 
 async def main():
     bot = RPGBot()
-    await bot.load_extension('cogs.basic')
-    await bot.load_extension('jishaku')
+    for cog in COGS:
+        await bot.load_extension(cog)
     await bot.start(TOKEN, reconnect=True)
 
 

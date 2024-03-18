@@ -1,7 +1,10 @@
 from enum import Enum
+from typing import Optional
 import discord
 from discord import app_commands, ui
 from discord.ext import commands
+
+from ext.views import TimeOutDisableView
 
 class Elements(Enum):
     none = 0
@@ -10,39 +13,55 @@ class Elements(Enum):
     water = 3
     air = 4
 
-class ElementalView(ui.View):
+class ConfirmView(TimeOutDisableView):
+    def __init__(self):
+        self.value: bool = 0
+        super().__init__(timeout=60)
+
+    @ui.button(label="Yes", style=discord.ButtonStyle.red)
+    async def yes_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
+        self.value: bool = 1
+        self.stop()
+        await interaction.response.send_message(f"Sad to see it... Your progress has been deleted.", view=self)
+
+    @ui.button(label="No", style=discord.ButtonStyle.grey)
+    async def no_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
+        self.value: bool = 0
+        self.stop()
+        await interaction.response.send_message(f"Phew, good luck on your adventures!", view=self)
+       
+
+
+class ElementalView(TimeOutDisableView):
     def __init__(self):
         self.value: Elements = Elements.none
+        self.response: Optional[discord.InteractionMessage] = None
         super().__init__(timeout=60)
 
     @ui.button(label="fire", emoji="🔥", row=0)
     async def fire_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
         self.value = Elements[button.label]
         self.stop()
-        await interaction.response.send_message(f"You have chosen {self.value.name}", view=self)
+        await interaction.response.send_message(f"You have become a conduit for the element of passion and destruction, you have chosen, **{self.value.name}**.", view=self)
 
     @ui.button(label="earth", emoji="🪨", row=1)
     async def earth_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
         self.value = Elements[button.label]
         self.stop()
-        await interaction.response.send_message(f"You have chosen {self.value.name}", view=self)
+        await interaction.response.send_message(f"You have become a conduit for the element of spirituality and transformation, you have chosen, **{self.value.name}**.", view=self)
 
     @ui.button(label="water", emoji="🫧", row=2)
     async def water_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
         self.value = Elements[button.label]
         self.stop()
-        await interaction.response.send_message(f"You have chosen {self.value.name}", view=self)
+        await interaction.response.send_message(f"You have become a conduit for the element of freedom and spontaneous, you have chosen {self.value.name}.", view=self)
 
     @ui.button(label="air", emoji="🌪", row=3)
     async def air_button(self, interaction: discord.Interaction, button: ui.Button) -> None:
         self.value = Elements[button.label]
         self.stop()
-        await interaction.response.send_message(f"You have chosen {self.value.name}", view=self)
+        await interaction.response.send_message(f"You have become a conduit for the element of roots and resilience, you hav chosen **{self.value.name}**.", view=self)
 
-    def stop(self) -> None:
-        for child in self.children:
-            child.disabled = True
-            super().stop()
 
 class BasicCog(commands.Cog):
     def __init__(self, bot) -> None:
@@ -60,9 +79,10 @@ class BasicCog(commands.Cog):
                 "Choose which element you want to use, or in other words which conduit you choose to attune to.\n\n", 
                 view=view
             )
+            view.response = await interaction.original_response()
             await view.wait()
             if view.value is Elements.none:
-                return await interaction.followup.send("Please chose an element")
+                return await interaction.followup.send("You haven't chosen any element")
             else:
                 await self.bot.db.users.insert_one({"_id": interaction.user.id, "element": view.value.value})
 
@@ -76,7 +96,9 @@ class BasicCog(commands.Cog):
     @app_commands.command(name="reset")
     async def reset(self, interaction: discord.Interaction):
         """Deletes your bot progress"""
+        view = ConfirmView()
         await interaction.response.send_message("Done")
+        await self.bot.db.users.delete_one({"_id": interaction.user.id})
 
 
 
