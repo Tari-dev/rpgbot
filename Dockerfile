@@ -16,4 +16,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 ENTRYPOINT [ "python3" ]
 
-CMD ["Ro.py"]
+CMD ["bot.py"]
