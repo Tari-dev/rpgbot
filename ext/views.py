@@ -14,11 +14,11 @@ class StopChildDisabledView(discord.ui.View):
 
 class TimeOutDisableView(StopChildDisabledView):
     def __init__(self, *, timeout: float | None = 180):
-        self.response = Optional[discord.InteractionMessage] = None
+        self.response: Optional[discord.InteractionMessage] = None
         super().__init__(timeout=timeout)
 
     async def on_timeout(self) -> None:
         self.stop()
         if self.response:
-            await self.response.edit(view=None)
+            await self.response.edit(view=self)
         return await super().on_timeout()
